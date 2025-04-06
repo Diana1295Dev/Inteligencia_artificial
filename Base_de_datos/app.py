@@ -119,7 +119,131 @@ if not df.empty:
 
         st.plotly_chart(fig3, use_container_width=True)
 
+<<<<<<< HEAD
     else:
         st.warning("⚠️ No hay datos para los filtros seleccionados.")
 else:
     st.warning("⚠️ No se pudieron cargar los datos de cultivos.")
+=======
+    # Formulario para agregar tarea
+    with st.form("Agregar Tarea"):
+        titulo = st.text_input("Título")
+        descripcion = st.text_area("Descripción")
+        fecha_limite = st.date_input("Fecha Límite")
+        responsable_nombre = st.selectbox("Responsable", [usuario.nombre for usuario in st.session_state.usuarios])
+        estado_seleccionado = st.selectbox("Estado", Estado.ESTADOS_VALIDOS)
+        submit_button = st.form_submit_button("Agregar Tarea")
+
+        if submit_button:
+            responsable = next((u for u in st.session_state.usuarios if u.nombre == responsable_nombre), None)
+            fecha_creacion = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            tarea = Tarea(
+                st.session_state.contador_tarea_id,
+                titulo,
+                descripcion,
+                fecha_creacion,
+                fecha_limite.strftime('%Y-%m-%d'),
+                responsable,
+                estado_seleccionado
+            )
+            st.session_state.tareas.append(tarea)
+            st.success(f"✅ Tarea '{titulo}' creada con ID: {st.session_state.contador_tarea_id}")
+            st.session_state.contador_tarea_id += 1
+
+            # Mostrar solo la última tarea agregada
+            st.subheader("🆕 Última Tarea Creada")
+            st.markdown(f"""
+            ---
+            **🆔 ID:** {tarea.tarea_id}  
+            **📌 Título:** {tarea.titulo}  
+            **📝 Descripción:** {tarea.descripcion}  
+            **👤 Responsable:** {tarea.responsable.nombre}  
+            **📅 Fecha límite:** {tarea.fecha_limite}  
+            **📈 Estado:** {tarea.estado}
+            """)
+
+    # Opciones para Modificar y Eliminar tareas solo si hay tareas creadas
+    if st.session_state.tareas:
+        st.subheader("✏️ Modificar Tarea")
+        tarea_modificar = st.selectbox("Selecciona tarea para modificar", [f"{t.tarea_id} - {t.titulo}" for t in st.session_state.tareas])
+        tarea_seleccionada = next((t for t in st.session_state.tareas if t.tarea_id == int(tarea_modificar.split(" - ")[0])), None)
+
+        if tarea_seleccionada:
+            nuevo_titulo = st.text_input("Nuevo título", tarea_seleccionada.titulo)
+            nueva_descripcion = st.text_area("Nueva descripción", tarea_seleccionada.descripcion)
+            nueva_fecha_limite = st.date_input("Nueva fecha límite", datetime.strptime(tarea_seleccionada.fecha_limite, '%Y-%m-%d'))
+            nuevo_estado = st.selectbox("Nuevo estado", Estado.ESTADOS_VALIDOS, index=Estado.ESTADOS_VALIDOS.index(tarea_seleccionada.estado))
+            nuevo_responsable = st.selectbox("Nuevo responsable", [usuario.nombre for usuario in st.session_state.usuarios], index=[u.nombre for u in st.session_state.usuarios].index(tarea_seleccionada.responsable.nombre))
+
+            if st.button("Guardar Cambios"):
+                tarea_seleccionada.titulo = nuevo_titulo
+                tarea_seleccionada.descripcion = nueva_descripcion
+                tarea_seleccionada.fecha_limite = nueva_fecha_limite.strftime('%Y-%m-%d')
+                tarea_seleccionada.estado = nuevo_estado
+                tarea_seleccionada.responsable = next((u for u in st.session_state.usuarios if u.nombre == nuevo_responsable), tarea_seleccionada.responsable)
+                st.success("🔄 Tarea modificada exitosamente.")
+
+        st.subheader("🗑️ Eliminar Tarea")
+        tarea_eliminar = st.selectbox("Selecciona tarea para eliminar", [f"{t.tarea_id} - {t.titulo}" for t in st.session_state.tareas])
+        if st.button("Eliminar Tarea"):
+            tarea_id_a_eliminar = int(tarea_eliminar.split(" - ")[0])
+            st.session_state.tareas = [t for t in st.session_state.tareas if t.tarea_id != tarea_id_a_eliminar]
+            st.success("🗑️ Tarea eliminada exitosamente.")
+
+
+def main():
+    st.title("📝 Sistema de Gestión de Tareas")
+
+    # Menú con botones visibles en el sidebar
+    st.sidebar.title("📌 Menú Principal")
+
+    if st.sidebar.button("🏠 Inicio"):
+        st.session_state.opcion = "Inicio"
+    if st.sidebar.button("👥 Gestión de Usuarios"):
+        st.session_state.opcion = "Gestion Usuarios"
+    if st.sidebar.button("📋 Gestión de Tareas"):
+        st.session_state.opcion = "Gestion Tareas"
+    if st.sidebar.button("📊 Informes"):
+        st.session_state.opcion = "Informes"
+    if st.sidebar.button("📑 Reportes"):
+        st.session_state.opcion = "Reportes"
+
+    # Opción por defecto
+    if 'opcion' not in st.session_state:
+        st.session_state.opcion = "Inicio"
+
+    # Controlador de las opciones seleccionadas
+    if st.session_state.opcion == "Inicio":
+        st.subheader("📖 Bienvenidos al Sistema de Gestión de Tareas")
+        st.markdown("""
+        Esta aplicación permite gestionar tareas asignadas a diferentes usuarios. Se pueden realizar las siguientes acciones:
+        
+        - **Gestión de Usuarios:** Crear, modificar y eliminar usuarios.
+        - **Gestión de Tareas:** Crear, modificar, asignar y eliminar tareas, así como actualizar sus estados.
+        
+        ### 🔄 Pipeline del proyecto:
+        1. Análisis y diseño de la solución.
+        2. Definición de módulos y clases usando POO (Python).
+        3. Implementación de funcionalidades con Streamlit para interactividad visual.
+        4. Manejo de estado en sesión con `st.session_state`.
+
+        ### ✒️ Autores:
+        - **Ana María García Arias**
+        - **Diana Gonzalez**
+        """)
+        
+    elif st.session_state.opcion == "Gestion Usuarios":
+        gestionar_usuarios()
+    
+    elif st.session_state.opcion == "Gestion Tareas":
+        gestionar_tareas()
+    
+    elif st.session_state.opcion == "Informes":
+        generar_informe()
+
+    elif st.session_state.opcion == "Reportes":
+        generar_reportes()
+
+if __name__ == "__main__":
+    main()
+>>>>>>> c168e459545e6f4184de2ea5cc215662e2ed7e5d
